@@ -224,3 +224,6 @@ app/src/main/res/values/arrays.xml             xposed_scope = com.android.system
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 & ..\android-env\build-apk.ps1 . -Task assembleDebug
 ```
+## 十一、作者
+
+Deepseek、B站@z7ui
