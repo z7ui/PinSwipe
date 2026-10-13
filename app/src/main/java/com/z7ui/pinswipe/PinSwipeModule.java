@@ -121,6 +121,21 @@ public class PinSwipeModule implements IXposedHookLoadPackage {
 
         SwipePadController controller = new SwipePadController(digits, extras, sink);
         controllers.put(pad, controller);
+        if (LOG_TRIGGERS) {
+            StringBuilder sb = new StringBuilder("键盘几何 ");
+            int[] loc = new int[2];
+            for (View v : digits) {
+                v.getLocationOnScreen(loc);
+                sb.append('[').append(loc[0]).append(',').append(loc[1]).append(' ')
+                        .append(v.getWidth()).append('x').append(v.getHeight()).append(']');
+            }
+            for (View v : extras) {
+                v.getLocationOnScreen(loc);
+                sb.append(" ⌫[").append(loc[0]).append(',').append(loc[1]).append(' ')
+                        .append(v.getWidth()).append('x').append(v.getHeight()).append(']');
+            }
+            XposedBridge.log(TAG + ": " + sb);
+        }
         XposedBridge.log(TAG + ": 接管 PIN 键盘，数字键 " + digits.size() + " 个，附加键 " + extras.size() + " 个");
         return controller;
     }

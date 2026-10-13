@@ -54,6 +54,15 @@ public final class SwipePadController {
     private final int[] loc = new int[2];
     private int slop = -1;
 
+    /**
+     * 命中判定只认键**中间这一块**（边长比例）。
+     *
+     * 为什么必须缩：斜着划的时候，1→5 的直线几乎贴着 2 的右下角过去 ——
+     * 用整个键做判定的话，手指稍微偏一点就会多输一个 2，159753 这种斜线密码
+     * 直接没法用。缩到中间这块之后，只有真的"划进去了"才算。
+     */
+    private static final float CORE_RATIO = 0.56f;
+
     private boolean active;
     private View downKey;
     private boolean downPending;   // 起点键还没补
@@ -63,6 +72,12 @@ public final class SwipePadController {
 
     private View holdKey;          // 已经挂上长按计时器的键
     private boolean holdFired;     // 当前 pending 键是否已经长按结算过
+    /**
+     * 上一次上报的键。手指停在键中央那一块的边界上时会来回穿越，
+     * 同一个键就会被上报两次（真机日志里出现过间隔 5ms 的重复 —— 人不可能是这个速度）。
+     * 所以**连续两次上报同一个键就被吞掉**；中间隔了别的键就算真的又划回来了，照报。
+     */
+    private View lastCommitted;
 
     private final Runnable holdCallback = new Runnable() {
         @Override
@@ -72,6 +87,7 @@ public final class SwipePadController {
                 return;
             }
             holdFired = true;
+            lastCommitted = key;
             try {
                 sink.onKeyHeld(key);
             } catch (Throwable ignored) {
@@ -116,10 +132,14 @@ public final class SwipePadController {
         active = true;
         lastX = event.getRawX();
         lastY = event.getRawY();
-        downKey = hit(lastX, lastY);
+        // 起点用**整个键**判定：用户可能按在数字边上，那一按确实落在系统那个键里，
+        // 系统会在抬手时点它，我们必须在它被取消时兜住这一位。
+        downKey = hitFull(lastX, lastY);
         downPending = downKey != null;
-        pending = downKey;
-        armHold(downKey);
+        lastCommitted = null;      // 每一笔重新开始，159 里那个 5 和 753 里那个 5 都要能进
+        // 而"划过"序列用中间那块判定
+        pending = hitCore(lastX, lastY);
+        armHold(pending);
     }
 
     private void move(MotionEvent event) {
@@ -144,7 +164,7 @@ public final class SwipePadController {
     }
 
     private void sample(float x, float y) {
-        View key = hit(x, y);
+        View key = hitCore(x, y);
         if (key == pending) {
             return;
         }
@@ -159,9 +179,11 @@ public final class SwipePadController {
 
     private void finish() {
         cancelHold();
+        // 手指可能停在键的边缘（中间那块之外）——收尾时用整个键兜一下，否则最后一位会丢
+        View last = pending != null ? pending : hitFull(lastX, lastY);
         // pending == downKey 且系统还会自己点 → 交给系统；长按结算过也不再补短按
-        if (pending != null && !holdFired && !(pending == downKey && downPending)) {
-            trigger(pending);
+        if (last != null && !holdFired && !(last == downKey && downPending)) {
+            trigger(last);
         }
         active = false;
         downKey = null;
@@ -204,21 +226,29 @@ public final class SwipePadController {
     }
 
     private void trigger(View key) {
-        if (key == null) {
+        if (key == null || key == lastCommitted) {
             return;
         }
+        lastCommitted = key;
         try {
             sink.onKeyTriggered(key);
         } catch (Throwable ignored) {
         }
     }
 
-    private View hit(float rawX, float rawY) {
-        View v = find(digitKeys, rawX, rawY);
-        return v != null ? v : find(auxiliaryKeys, rawX, rawY);
+    /** 划过序列用：只认键中间那块。 */
+    private View hitCore(float rawX, float rawY) {
+        View v = find(digitKeys, rawX, rawY, true);
+        return v != null ? v : find(auxiliaryKeys, rawX, rawY, true);
     }
 
-    private View find(List<View> keys, float rawX, float rawY) {
+    /** 起点用：整个键的范围。 */
+    private View hitFull(float rawX, float rawY) {
+        View v = find(digitKeys, rawX, rawY, false);
+        return v != null ? v : find(auxiliaryKeys, rawX, rawY, false);
+    }
+
+    private View find(List<View> keys, float rawX, float rawY, boolean coreOnly) {
         if (keys == null) {
             return null;
         }
@@ -227,8 +257,7 @@ public final class SwipePadController {
             if (key == null || !key.isShown() || !key.isEnabled()) {
                 continue;
             }
-            key.getLocationOnScreen(loc);
-            rect.set(loc[0], loc[1], loc[0] + key.getWidth(), loc[1] + key.getHeight());
+            boundsOf(key, coreOnly);
             if (rect.contains((int) rawX, (int) rawY)) {
                 return key;
             }
@@ -236,13 +265,27 @@ public final class SwipePadController {
         return null;
     }
 
-    /** 和 View.onTouchEvent 用的是同一个判定：自己的范围向外扩一个 touch slop。 */
+    /** coreOnly=true 时把矩形往中间收成 CORE_RATIO。 */
+    private void boundsOf(View key, boolean coreOnly) {
+        key.getLocationOnScreen(loc);
+        int w = key.getWidth();
+        int h = key.getHeight();
+        if (!coreOnly) {
+            rect.set(loc[0], loc[1], loc[0] + w, loc[1] + h);
+            return;
+        }
+        int insetX = (int) (w * (1f - CORE_RATIO) / 2f);
+        int insetY = (int) (h * (1f - CORE_RATIO) / 2f);
+        rect.set(loc[0] + insetX, loc[1] + insetY,
+                loc[0] + w - insetX, loc[1] + h - insetY);
+    }
+
+    /** 和 View.onTouchEvent 用的是同一个判定：键的范围向外扩一个 touch slop。 */
     private boolean insideSlop(View key, float rawX, float rawY) {
         if (key == null) {
             return false;
         }
-        key.getLocationOnScreen(loc);
-        rect.set(loc[0], loc[1], loc[0] + key.getWidth(), loc[1] + key.getHeight());
+        boundsOf(key, false);
         int s = slop();
         rect.inset(-s, -s);
         return rect.contains((int) rawX, (int) rawY);
