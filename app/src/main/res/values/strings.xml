@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PIN 滑动输入</string>
+    <string name="xposed_description">锁屏 PIN 支持像 Flyme 那样滑动输入：手指在数字键上划过，按划过的顺序依次输入。只作用于 SystemUI 的锁屏键盘，原生点按路径完全不动。</string>
+    <string name="demo_title">滑动输入 · 演示</string>
+</resources>
