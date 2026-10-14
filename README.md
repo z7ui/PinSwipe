@@ -2,6 +2,8 @@
 
 小米 17 Pro / HyperOS 4（Android 17 / SDK 37）实测可用。MIT 之类的随意用。
 
+三星版：https://github.com/z7ui/PinSwipeForGalaxy
+
 > 目标：Flyme 的锁屏数字密码可以**按住不放、划过即输入**。
 > HyperOS 没有这个能力，而且它不是配置项 —— 只能挂代码。这里给出的是一个
 > 普通 LSPosed 模块，作用域只有 SystemUI，不需要改系统 APK。
