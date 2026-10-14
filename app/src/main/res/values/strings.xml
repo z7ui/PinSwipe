@@ -3,4 +3,19 @@
     <string name="app_name">PIN 滑动输入</string>
     <string name="xposed_description">锁屏 PIN 支持像 Flyme 那样滑动输入：手指在数字键上划过，按划过的顺序依次输入。只作用于 SystemUI 的锁屏键盘，原生点按路径完全不动。</string>
     <string name="demo_title">滑动输入 · 演示</string>
+    <string name="demo_reset">重置演示</string>
+    <string name="demo_clear_log">清除模块日志</string>
+    <string name="demo_about">关于</string>
+    <string name="demo_log_reading">模块日志：读取中…</string>
+    <string name="demo_log_size">模块日志：%1$s</string>
+    <string name="demo_log_size_unknown">模块日志：需要 root 才能读取</string>
+    <string name="demo_log_clearing">模块日志：正在清除…</string>
+    <string name="demo_log_cleared">已清空，释放 %1$s</string>
+    <string name="demo_log_clear_failed">清除失败：KernelSU 里没授权本应用，或这台设备没有 root</string>
+    <string name="about_title">关于</string>
+    <string name="about_body">锁屏 PIN 支持按住不松手、划过即输入；长按 ⌫ 清空。\n只作用于 SystemUI 的锁屏键盘，原生点按路径完全不动。\n\n逐位日志默认关闭：模块只在启动、接管键盘、出错时各写一条，不会刷盘。\n「清除模块日志」清空的是 LSPosed 的日志文件（/data/adb/lspd/log，所有模块共用），用截断而不是删除 —— 那些文件正被 lspd 打开着，删掉要等它关闭才释放空间。</string>
+    <string name="about_author">作者  Deepseek · B站 @z7ui</string>
+    <string name="about_repo">仓库  github.com/z7ui/PinSwipe</string>
+    <string name="about_version">版本  %1$s</string>
+    <string name="about_ok">确定</string>
 </resources>
