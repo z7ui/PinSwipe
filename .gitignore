@@ -11,3 +11,7 @@
 local.properties
 *.apk
 *.keystore
+*.jks
+keystore.properties
+key.properties
+PASSWORD.txt

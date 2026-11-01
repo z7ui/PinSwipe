@@ -226,6 +226,18 @@ app/src/main/res/values/arrays.xml             xposed_scope = com.android.system
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 & ..\android-env\build-apk.ps1 . -Task assembleDebug
 ```
+## 签名
+
+> 2026-11-01 起，正式发布包从 Android debug 签名切换到独立正式密钥
+> （RSA 4096 / SHA384withRSA / 30 年）。
+
+- **证书指纹（SHA-256）**：`DC:A4:31:37:00:AA:81:7E:5F:0D:BE:FA:B6:F8:37:18:94:9D:51:E7:D0:6A:1D:6A:56:88:EC:90:4C:65:CB:FD`
+- ⚠️ **与旧版不兼容**：旧版是 debug 签名，签名不同，老用户**必须先卸载再安装**，
+  否则系统拒绝覆盖升级（数据会丢）。
+- **两套签名不能混用**：之后请始终用正式密钥签名发布。
+
+密钥已归档到自建服务器（加密），不入 git 仓库。
+
 ## 十一、作者
 
 Deepseek、B站@z7ui
