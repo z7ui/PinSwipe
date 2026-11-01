@@ -241,3 +241,9 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 ## 十一、作者
 
 Deepseek、B站@z7ui
+### 构建
+
+把 `pinswipe-release.jks` 和 `keystore.properties` 放进仓库根目录的 `keystore/`，
+`./gradlew assembleRelease` 就会自动用正式密钥签名；没有 `keystore/` 时退回 debug 签名
+（保证别人 clone 下来也能直接构建，只是出的包是 debug 签名）。
+`keystore/` 已在 `.gitignore` 中，**不会入库**。
