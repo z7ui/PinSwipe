@@ -2,6 +2,7 @@ package com.z7ui.pinswipe;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.widget.Toast;
 import android.content.pm.PackageInfo;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -311,8 +312,30 @@ public class DemoActivity extends Activity {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.about_title)
                 .setMessage(message)
+                .setNeutralButton("博客", (d, w) -> Updater.openUrl(this, AppMeta.BLOG_URL))
+                .setNegativeButton("检查更新", (d, w) -> checkUpdate())
                 .setPositiveButton(R.string.about_ok, null)
                 .show();
+    }
+
+    /** 检查更新：只请求版本清单，没有别的网络行为 */
+    private void checkUpdate() {
+        Toast.makeText(this, "检查中…", Toast.LENGTH_SHORT).show();
+        Updater.check(this, info -> {
+            if (isFinishing()) {
+                return;
+            }
+            if (info == null) {
+                Toast.makeText(this, "已是最新版本", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            new AlertDialog.Builder(this)
+                    .setTitle("发现新版本 " + info.version)
+                    .setMessage(info.notes.isEmpty() ? "建议更新到最新版。" : info.notes)
+                    .setNegativeButton("以后再说", null)
+                    .setPositiveButton("去下载", (d, w) -> Updater.openUrl(this, info.apkUrl))
+                    .show();
+        });
     }
 
     /** 跑一条 root 命令，stdout+stderr 一起收回并在主线程回调。 */
