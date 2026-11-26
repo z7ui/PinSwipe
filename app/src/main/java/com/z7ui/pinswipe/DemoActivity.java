@@ -5,6 +5,10 @@ import android.app.AlertDialog;
 import android.widget.Toast;
 import android.content.pm.PackageInfo;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.TypedValue;
@@ -58,31 +62,40 @@ public class DemoActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.BLACK);
-        int pad = dp(16);
-        root.setPadding(pad, dp(40), pad, dp(16));
+        root.setBackgroundColor(0xFF0D0D10);
+        int pad = dp(20);
+        root.setPadding(pad, dp(44), pad, dp(18));
 
         TextView title = new TextView(this);
         title.setText(R.string.demo_title);
-        title.setTextColor(0xFF8AB4F8);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        title.setTextColor(0xFFF2F3F7);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
         root.addView(title);
 
         TextView hint = new TextView(this);
-        hint.setText("按住一位数字别松手，一路划过去。单点应该仍然只输入一位。");
-        hint.setTextColor(0xFF9AA0A6);
+        hint.setText("按住一位数字别松手，一路划过去。单点仍然只输入一位。");
+        hint.setTextColor(0xFF8A8F9C);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        hint.setPadding(0, dp(6), 0, 0);
+        hint.setLineSpacing(dp(4), 1f);
+        hint.setPadding(0, dp(8), 0, 0);
         root.addView(hint);
 
+        // 密码显示区给一块底，不然白点悬在黑上空落落
+        LinearLayout dotsBox = new LinearLayout(this);
+        dotsBox.setGravity(Gravity.CENTER);
+        dotsBox.setBackground(round(0xFF17171D, 18));
+        LinearLayout.LayoutParams boxLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(86));
+        boxLp.topMargin = dp(18);
+        root.addView(dotsBox, boxLp);
+
         dots = new TextView(this);
-        dots.setTextColor(Color.WHITE);
-        dots.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
+        dots.setTextColor(0xFFF2F3F7);
+        dots.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
         dots.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams dotsLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(76));
-        dotsLp.topMargin = dp(10);
-        root.addView(dots, dotsLp);
+        dots.setLetterSpacing(0.3f);
+        dotsBox.addView(dots);
 
         LinearLayout padView = new LinearLayout(this);
         padView.setOrientation(LinearLayout.VERTICAL);
@@ -157,26 +170,23 @@ public class DemoActivity extends Activity {
 
         LinearLayout buttons = new LinearLayout(this);
         buttons.setOrientation(LinearLayout.HORIZONTAL);
-        buttons.setPadding(0, dp(6), 0, 0);
+        buttons.setPadding(0, dp(16), 0, 0);
 
-        Button reset = new Button(this);
-        reset.setText(R.string.demo_reset);
+        TextView reset = pill(getString(R.string.demo_reset));
         reset.setOnClickListener(v -> {
             entered.setLength(0);
             order.setLength(0);
             renderDots();
         });
-        buttons.addView(reset, weight());
+        buttons.addView(reset, pillWeight());
 
-        Button clearLog = new Button(this);
-        clearLog.setText(R.string.demo_clear_log);
+        TextView clearLog = pill(getString(R.string.demo_clear_log));
         clearLog.setOnClickListener(v -> clearModuleLog());
-        buttons.addView(clearLog, weight());
+        buttons.addView(clearLog, pillWeight());
 
-        Button about = new Button(this);
-        about.setText(R.string.demo_about);
+        TextView about = pill(getString(R.string.demo_about));
         about.setOnClickListener(v -> showAbout());
-        buttons.addView(about, weight());
+        buttons.addView(about, pillWeight());
 
         root.addView(buttons, wrap());
 
@@ -194,7 +204,13 @@ public class DemoActivity extends Activity {
             super(DemoActivity.this);
             this.value = value;
             setAllCaps(false);
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+            setTextColor(0xFFF2F3F7);
+            setBackground(keyState());
+            setMinHeight(0);
+            setMinWidth(0);
+            setPadding(0, 0, 0, 0);
+            setStateListAnimator(null);
             setText(value >= 0 ? String.valueOf(value) : "⌫");
             setOnClickListener(v -> input(value));
             if (value < 0) {
@@ -245,7 +261,15 @@ public class DemoActivity extends Activity {
         for (int i = 0; i < entered.length(); i++) {
             sb.append('●');
         }
-        dots.setText(sb.length() == 0 ? "—" : sb.toString());
+        if (sb.length() == 0) {
+            dots.setText("等待输入");
+            dots.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            dots.setTextColor(0xFF4A4A55);
+        } else {
+            dots.setText(sb.toString());
+            dots.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
+            dots.setTextColor(0xFFF2F3F7);
+        }
         trace.setText("划过顺序：" + order + "    位数：" + entered.length());
     }
 
@@ -407,6 +431,47 @@ public class DemoActivity extends Activity {
                 0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
         int m = dp(6);
         lp.setMargins(m, m, m, m);
+        return lp;
+    }
+
+
+    /** 一块圆角纯色底。 */
+    private Drawable round(int color, int radiusDp) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(color);
+        d.setCornerRadius(dp(radiusDp));
+        return d;
+    }
+
+    /** 按键：平时深灰，按下浅一档，靠颜色而不是阴影表达反馈。 */
+    private Drawable keyState() {
+        StateListDrawable s = new StateListDrawable();
+        s.addState(new int[]{android.R.attr.state_pressed}, round(0xFF2C2C35, 18));
+        s.addState(new int[]{}, round(0xFF1A1A21, 18));
+        return s;
+    }
+
+    /** 底部胶囊按钮。 */
+    private TextView pill(String text) {
+        TextView v = new TextView(this);
+        v.setText(text);
+        v.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        v.setTextColor(0xFFC5C9D2);
+        v.setGravity(Gravity.CENTER);
+        v.setPadding(dp(6), dp(11), dp(6), dp(11));
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(0xFF17171D);
+        d.setCornerRadius(dp(12));
+        d.setStroke(dp(1), 0xFF2A2A33);
+        v.setBackground(d);
+        v.setClickable(true);
+        return v;
+    }
+
+    private LinearLayout.LayoutParams pillWeight() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        lp.setMargins(dp(4), 0, dp(4), 0);
         return lp;
     }
 
